@@ -119,6 +119,8 @@ textarea::placeholder { color: var(--text-dim); }
 <div class="header-top">
 <div class="logo-icon">🤖</div>
 <span>AI Agent · Multi-Model</span>
+<button class="new-chat-btn" id="exportTranscriptBtn"
+title="Export Make.fun transcript" aria-label="Export Make.fun transcript">⇩</button>
 <button class="new-chat-btn" id="newChatBtn" title="New chat" aria-label="New chat">＋</button>
 </div>
 <div class="status-bar">
@@ -200,6 +202,8 @@ keyName: 'ma_cle_cohere', placeholder: 'Your Cohere trial key', prefixes: [], ke
 var activeIndex = 0;
 var chatHistory = []; // conversation sent to the model (not "history": that name is taken by the browser)
 var transcript = [];  // what is displayed on screen, saved locally with chatHistory
+var sessionId = crypto.randomUUID();
+var sessionStartedAt = new Date().toISOString();
 var busy = false;     // is a request in flight?
 var STORE_KEY = 'conversation_v1';   // localStorage slot holding the saved conversation
 
@@ -265,6 +269,10 @@ function saveChat() {
 // A storage failure (private mode, quota) must never break the chat
 try {
 localStorage.setItem(STORE_KEY, JSON.stringify({
+version: 1,
+session_id: sessionId,
+started_at: sessionStartedAt,
+updated_at: new Date().toISOString(),
 model: models[activeIndex].id,
 messages: chatHistory,
 transcript: transcript
@@ -284,6 +292,9 @@ if (!raw) return false;
 var data;
 try { data = JSON.parse(raw); } catch (e) { return false; }
 if (!data) return false;
+
+sessionId = data.session_id || crypto.randomUUID();
+sessionStartedAt = data.started_at || new Date().toISOString();
 
 // the chosen provider is remembered even before the first message
 models.forEach(function (m, i) { if (m.id === data.model) activeIndex = i; });
@@ -581,7 +592,10 @@ var data = await response.json();
 var replyText = readReply(data);
 
 if (!replyText) throw new Error('Empty response from the model.');
-return replyText;
+return {
+text: replyText,
+usage: data.usage || null
+};
 } finally {
 clearTimeout(timer);
 }
@@ -635,6 +649,7 @@ if (!readKey(primaryDef)) return;
 var welcome = document.getElementById('welcome');
 if (welcome) welcome.remove();
 
+var userTimestamp = new Date().toISOString();
 addBubble('user', text);
 input.value = '';
 input.style.height = 'auto';
@@ -643,7 +658,11 @@ scrollToBottom();
 busy = true;
 updateSendButton();
 
-chatHistory.push({ role: 'user', content: text });
+chatHistory.push({
+role: 'user',
+content: text,
+timestamp: userTimestamp
+});
 saveChat();
 
 // Automatic failover: the selected provider first, then every other provider that has a key
@@ -654,7 +673,7 @@ if (i !== primary && readKey(m)) candidates.push(i);
 
 var failures = [];
 var answeredIndex = -1;
-var replyText = '';
+var replyResult = null;
 
 for (var c = 0; c < candidates.length && answeredIndex === -1; c++) {
 var index = candidates[c];
@@ -662,7 +681,7 @@ var modelDef = models[index];
 setStatus('thinking', 'Thinking… (' + modelDef.name + ')');
 
 try {
-replyText = await requestModel(modelDef, readKey(modelDef));
+replyResult = await requestModel(modelDef, readKey(modelDef));
 answeredIndex = index;
 } catch (error) {
 failures.push({ error: error, modelDef: modelDef });
@@ -678,8 +697,15 @@ activeIndex = answeredIndex;   // stay on the provider that actually answers
 refreshUI();
 }
 
-chatHistory.push({ role: 'assistant', content: replyText });
-addBubble('bot', replyText);
+chatHistory.push({
+role: 'assistant',
+content: replyResult.text,
+timestamp: new Date().toISOString(),
+provider: answeredDef.id,
+model: answeredDef.model,
+usage: replyResult.usage
+});
+addBubble('bot', replyResult.text);
 setStatus('ready');
 } else {
 // nothing answered: keep the failed message out of the model history
@@ -724,6 +750,8 @@ document.getElementById('newChatBtn').addEventListener('click', function () {
 if (busy) return;
 chatHistory = [];
 transcript = [];
+sessionId = crypto.randomUUID();
+sessionStartedAt = new Date().toISOString();
 clearChat();
 showWelcome();
 refreshUI();
@@ -736,7 +764,52 @@ if (!restoreChat()) showWelcome();   // bring back the saved conversation, if an
 refreshUI();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script> 
- <script> function exportSessions() { const raw = localStorage.getItem('conversation_v1'); if (!raw) { alert('No sessions found'); return; } const data = new TextEncoder().encode(raw); const compressed = pako.gzip(data); const blob = new Blob([compressed], { type: 'application/gzip' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'sessions.tar.gz'; a.click(); } </script> 
+ <script>
+ function exportMakeFunTranscript() {
+   const raw = localStorage.getItem('conversation_v1');
+   if (!raw) {
+     alert('No session found');
+     return;
+   }
+
+   let saved;
+   try {
+     saved = JSON.parse(raw);
+   } catch (e) {
+     alert('The saved session is invalid.');
+     return;
+   }
+
+   const payload = {
+     format: 'make.fun-transcript',
+     format_version: 1,
+     session_id: saved.session_id || crypto.randomUUID(),
+     started_at: saved.started_at || null,
+     ended_at: new Date().toISOString(),
+     application: {
+       name: 'AI Agent · Multi-Model',
+       repository: 'https://github.com/moonspiid/ai-agent-multi-model'
+     },
+     model: saved.model || null,
+     messages: Array.isArray(saved.messages) ? saved.messages : [],
+     display_transcript: Array.isArray(saved.transcript) ? saved.transcript : []
+   };
+
+   const json = JSON.stringify(payload, null, 2);
+   const blob = new Blob([json], { type: 'application/json' });
+   const url = URL.createObjectURL(blob);
+   const a = document.createElement('a');
+   a.href = url;
+   a.download = 'makefun-transcript-' + payload.session_id + '.json';
+   document.body.appendChild(a);
+   a.click();
+   a.remove();
+   setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+ }
+
+ document.getElementById('exportTranscriptBtn')
+   .addEventListener('click', exportMakeFunTranscript);
+ </script>
 
 </body>
 </html>
