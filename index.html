@@ -203,6 +203,16 @@ var transcript = [];  // what is displayed on screen, saved locally with chatHis
 var busy = false;     // is a request in flight?
 var STORE_KEY = 'conversation_v1';   // localStorage slot holding the saved conversation
 
+// System prompt prepended to every request (not stored in the conversation),
+// so every provider gives short answers and spends fewer tokens
+var SYSTEM_PROMPT = 'You are a concise assistant. Answer in as few tokens as possible: give the direct answer first, ' +
+'without restating the question, filler or preamble. Prefer one or two short sentences; use bullet points only ' +
+'when a list is genuinely clearer. Never pad the answer to seem thorough.';
+
+function buildMessages() {   // system prompt + saved conversation
+return [{ role: 'system', content: SYSTEM_PROMPT }].concat(chatHistory);
+}
+
 // ---------- Helpers ----------
 
 function readKey(modelDef) {
@@ -545,8 +555,8 @@ headers['Authorization'] = 'Bearer ' + key;   // OpenAI-compatible providers
 
 // Anthropic needs a max_tokens value and uses the same messages array as the others
 var payload = modelDef.style === 'anthropic'
-? { model: modelDef.model, max_tokens: modelDef.maxTokens || 4096, messages: chatHistory }
-: { model: modelDef.model, messages: chatHistory };
+? { model: modelDef.model, max_tokens: modelDef.maxTokens || 4096, messages: buildMessages() }
+: { model: modelDef.model, messages: buildMessages() };
 
 try {
 var response = await fetch(modelDef.url, {
