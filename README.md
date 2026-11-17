@@ -35,7 +35,7 @@ Keys are stored per browser, so you only paste them once. Use the **Delete key**
 
 | Provider | Default model (ID) | Key prefix |
 | --- | --- | --- |
-| OpenRouter | `meta-llama/llama-4-scout:free` | `sk-or-` |
+| OpenRouter | `nvidia/nemotron-3.5-lightning:free` | `sk-or-` |
 | Google Gemini | `gemini-3.5-flash-lite` | `AIza`, `AQ.` |
 | Groq | `openai/gpt-oss-120b` | `gsk_` |
 | DeepSeek | `deepseek-flash` | `sk-` |

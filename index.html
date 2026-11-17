@@ -168,7 +168,7 @@ var models = [
 {
 id: 'openrouter', name: 'OpenRouter (10M)',
 url: 'https://openrouter.ai/api/v1/chat/completions',
-model: 'meta-llama/llama-4-scout:free',
+model: 'nvidia/nemotron-3.5-lightning:free',
 keyName: 'ma_cle_openrouter', placeholder: 'sk-or-...', prefixes: ['sk-or-'], keyUrl: 'https://openrouter.ai/keys'
 },
 {
@@ -582,6 +582,9 @@ clearTimeout(timer);
 function describeError(error, modelDef) {
 if (error.name === 'AbortError') {
 return 'Timed out: ' + modelDef.name + ' did not answer within 60 seconds.';
+}
+if (error.status === 402 || /credit balance|insufficient balance|insufficient_quota|billing/i.test(error.message || '')) {
+return 'No credit left on ' + modelDef.name + ' — add credits in that provider\'s console to use it again (the key itself is valid).';
 }
 if (error.status === 400 || error.status === 401 || error.status === 403) {
 var reason = shortReason(error);
