@@ -184,18 +184,16 @@ model: 'openai/gpt-oss-120b',
 keyName: 'ma_cle_groq', placeholder: 'gsk_...', prefixes: ['gsk_'], keyUrl: 'https://console.groq.com/keys'
 },
 {
-id: 'deepseek', name: 'DeepSeek (1M)',
-url: 'https://api.deepseek.com/chat/completions',
-model: 'deepseek-flash',
-keyName: 'ma_cle_deepseek', placeholder: 'sk-...', prefixes: ['sk-'], keyUrl: 'https://platform.deepseek.com/api_keys'
+id: 'aihubmix', name: 'AIHubMix Gemma (free)',
+url: 'https://aihubmix.com/v1/chat/completions',
+model: 'gemma-4-31b-it-free',   // the "-free" routes cost nothing: no balance to run out of
+keyName: 'ma_cle_aihubmix', placeholder: 'Your AIHubMix key', prefixes: [], keyUrl: 'https://console.aihubmix.com'
 },
 {
-id: 'anthropic', name: 'Anthropic Claude (1M)',
-url: 'https://api.anthropic.com/v1/messages',
-model: 'claude-haiku-5-5',
-style: 'anthropic',   // Messages API: its own headers, body and reply shape
-maxTokens: 4096,
-keyName: 'ma_cle_anthropic', placeholder: 'sk-ant-...', prefixes: ['sk-ant-'], keyUrl: 'https://console.anthropic.com/settings/keys'
+id: 'cohere', name: 'Cohere (436K)',
+url: 'https://api.cohere.ai/compatibility/v1/chat/completions',
+model: 'command-a-plus-05-2026',
+keyName: 'ma_cle_cohere', placeholder: 'Your Cohere trial key', prefixes: [], keyUrl: 'https://dashboard.cohere.com/api-keys'
 }
 ];
 
