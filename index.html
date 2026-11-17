@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI Agent · Multi-Model</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+--bg: #0f1117; --panel: #171a23; --panel-2: #1e222d; --border: #2a2f3d;
+--text: #e6e9ef; --text-dim: #8b93a7; --accent: #6c8cff; --accent-2: #8b5cf6;
+--green: #34d399; --red: #f87171; --yellow: #fbbf24;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+header { background: var(--panel); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; flex-direction: column; gap: 8px; position: relative; }
+.header-top { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
+.logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-radius: 9px; display: grid; place-items: center; font-size: 18px; }
+.new-chat-btn { margin-left: auto; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text-dim); font-size: 16px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+.new-chat-btn:hover { color: var(--text); border-color: var(--accent); }
+
+.status-bar { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-dim); gap: 10px; }
+
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 8px var(--red); display: inline-block; margin-right: 6px; transition: all 0.3s ease; }
+.status-dot.ready { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.status-dot.switching { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: 0.4; } }
+
+.key-counter {
+font-size: 10px; background: var(--panel-2); border: 1px solid var(--border);
+padding: 2px 6px; border-radius: 4px; margin-left: 6px; color: var(--text-dim); font-weight: 600;
+}
+.key-counter.has-keys { color: var(--green); border-color: rgba(52, 211, 153, 0.3); }
+
+details.model-dropdown { position: relative; width: 170px; }
+details.model-dropdown summary {
+list-style: none; background: var(--panel-2); border: 1px solid var(--border);
+padding: 6px 12px; border-radius: 8px; font-size: 12px; color: var(--text);
+font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+}
+details.model-dropdown summary::-webkit-details-marker { display: none; }
+details.model-dropdown summary::after { content: "▼"; font-size: 8px; color: var(--text-dim); }
+details.model-dropdown[open] summary::after { content: "▲"; }
+
+.dropdown-content {
+position: absolute; top: calc(100% + 6px); right: 0; width: 280px;
+max-width: calc(100vw - 24px);
+background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 100; overflow-y: auto; max-height: 70vh;
+}
+
+.model-option { border-bottom: 1px solid var(--border); }
+.model-option:last-child { border-bottom: none; }
+
+details.key-details summary {
+list-style: none; padding: 12px 14px; font-size: 13px; cursor: pointer;
+display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+details.key-details summary::-webkit-details-marker { display: none; }
+details.key-details summary:hover { background: var(--panel-2); }
+
+.key-status { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+.key-status.saved { color: var(--green); }
+
+.key-form { padding: 12px 14px; background: var(--bg); border-top: 1px solid var(--border); }
+.key-form a { font-size: 10px; color: var(--accent); text-decoration: none; display: block; margin-bottom: 6px; }
+.key-form input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); font-size: 12px; outline: none; margin-bottom: 6px; }
+.key-form input:focus { border-color: var(--accent); }
+.key-form button { width: 100%; padding: 8px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-weight: 600; font-size: 12px; cursor: pointer; }
+.key-form button.danger { background: transparent; border: 1px solid var(--border); color: var(--text-dim); margin-top: 6px; }
+.key-form button.danger:hover { color: var(--red); border-color: var(--red); }
+.key-form button[hidden] { display: none; }
+.key-msg { font-size: 10.5px; line-height: 1.4; margin-bottom: 6px; min-height: 0; color: var(--text-dim); }
+.key-msg.error { color: var(--red); }
+.key-msg.ok { color: var(--green); }
+
+.chat-wrap { flex: 1; overflow-y: auto; padding: 24px; scroll-behavior: smooth; }
+.chat { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.msg { display: flex; gap: 12px; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } }
+.msg.user { flex-direction: row-reverse; }
+.avatar { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 16px; font-weight: 700; }
+.msg.user .avatar { background: var(--panel-2); border: 1px solid var(--border); }
+.msg.bot .avatar { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+.bubble { max-width: 78%; padding: 12px 16px; border-radius: 14px; line-height: 1.6; font-size: 14.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.user .bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+.msg.bot .bubble { background: var(--panel-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg.bot .bubble.error { color: var(--red); border-color: rgba(248, 113, 113, 0.35); }
+.msg.note { justify-content: center; }
+.msg.note .bubble { background: transparent; border: 1px dashed var(--border); color: var(--text-dim); font-size: 12px; padding: 6px 12px; }
+
+.composer { border-top: 1px solid var(--border); background: var(--panel); padding: 16px 20px; }
+.composer-inner { max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: flex-end; background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 8px 8px 8px 16px; }
+.composer-inner:focus-within { border-color: var(--accent); }
+textarea { flex: 1; background: transparent; border: none; color: var(--text); font-family: inherit; font-size: 14.5px; line-height: 1.5; resize: none; max-height: 160px; padding: 8px 0; outline: none; }
+textarea::placeholder { color: var(--text-dim); }
+.send-btn { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-size: 18px; cursor: pointer; display: grid; place-items: center; }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.footer-container { max-width: 860px; margin: 12px auto 0; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 11px; color: var(--text-dim); }
+.hint-text { text-align: center; font-size: 11px; }
+.social-links { display: flex; gap: 12px; margin-top: 4px; }
+.social-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text-dim); }
+.social-btn svg { width: 14px; height: 14px; fill: currentColor; }
+.credit { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.credit a { color: var(--text); text-decoration: none; font-weight: 600; }
+.copyright { color: var(--text-dim); opacity: 0.7; }
+
+.welcome { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+.welcome h1 { font-size: 26px; color: var(--text); margin-bottom: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.welcome p { font-size: 14px; max-width: 460px; margin: 0 auto; line-height: 1.6; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-top">
+<div class="logo-icon">🤖</div>
+<span>AI Agent · Multi-Model</span>
+<button class="new-chat-btn" id="newChatBtn" title="New chat" aria-label="New chat">＋</button>
+</div>
+<div class="status-bar">
+<span style="display: flex; align-items: center;">
+<span class="status-dot" id="globalStatus"></span>
+<span id="statusText">Not Ready</span>
+<span class="key-counter" id="keyCounter">0/5</span>
+</span>
+
+<details class="model-dropdown" id="mainDropdown">
+<summary><span id="activeModelName">Select Model</span></summary>
+<div class="dropdown-content" id="dropdownContent"></div>
+</details>
+</div>
+</header>
+
+<div class="chat-wrap" id="chatWrap">
+<div class="chat" id="chat"></div>
+</div>
+
+<div class="composer">
+<div class="composer-inner">
+<textarea id="messageInput" rows="1" placeholder="Select a model first…"></textarea>
+<button class="send-btn" id="sendBtn" disabled aria-label="Send">➤</button>
+</div>
+
+<div class="footer-container">
+<div class="hint-text">Your API keys stay in this browser (localStorage) and are never sent to our servers. Avoid using a shared computer.</div>
+<div class="social-links">
+<a href="https://twitter.com/moonspiid" target="_blank" rel="noopener noreferrer" class="social-btn">
+<svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+</a>
+<a href="https://github.com/moonspiid" target="_blank" rel="noopener noreferrer" class="social-btn">
+<svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+</a>
+</div>
+<div class="credit">
+<span>Created by <a href="https://twitter.com/moonspiid" target="_blank" rel="noopener noreferrer">moonspiid</a></span>
+<span class="copyright">© 2026 — 100% Free</span>
+</div>
+</div>
+</div>
+
+<script>
+// MODEL LIST (single source of truth: the menu is generated from it)
+var models = [
+{
+id: 'openrouter', name: 'OpenRouter (10M)',
+url: 'https://openrouter.ai/api/v1/chat/completions',
+model: 'meta-llama/llama-4-scout:free',
+keyName: 'ma_cle_openrouter', placeholder: 'sk-or-...', prefixes: ['sk-or-'], keyUrl: 'https://openrouter.ai/keys'
+},
+{
+id: 'gemini', name: 'Google Gemini (1M)',
+url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+model: 'gemini-3.5-flash-lite',
+keyName: 'ma_cle_gemini', placeholder: 'AIza... or AQ...', prefixes: ['AIza', 'AQ.'], keyUrl: 'https://aistudio.google.com/app/apikey'
+},
+{
+id: 'groq', name: 'Groq (131K)',
+url: 'https://api.groq.com/openai/v1/chat/completions',
+model: 'openai/gpt-oss-120b',
+keyName: 'ma_cle_groq', placeholder: 'gsk_...', prefixes: ['gsk_'], keyUrl: 'https://console.groq.com/keys'
+},
+{
+id: 'mistral', name: 'Mistral (256K)',
+url: 'https://api.mistral.ai/v1/chat/completions',
+model: 'mistral-small-latest',
+keyName: 'ma_cle_mistral', placeholder: 'Your Mistral key', prefixes: [], keyUrl: 'https://console.mistral.ai/api-keys/'
+},
+{
+id: 'ovh', name: 'OVHcloud (131K)',
+url: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions',
+model: 'Meta-Llama-3_3-70B-Instruct',
+keyName: 'ma_cle_ovh', placeholder: 'Your OVHcloud token', prefixes: [], keyUrl: 'https://endpoints.ai.cloud.ovh.net/'
+}
+];
+
+var activeIndex = 0;
+var chatHistory = []; // conversation sent to the model (not "history": that name is taken by the browser)
+var transcript = [];  // what is displayed on screen, saved locally with chatHistory
+var busy = false;     // is a request in flight?
+var STORE_KEY = 'conversation_v1';   // localStorage slot holding the saved conversation
+
+// ---------- Helpers ----------
+
+function readKey(modelDef) {
+return localStorage.getItem(modelDef.keyName) || '';
+}
+
+function setStatus(state, customLabel) {   // 'ready' | 'thinking' | 'error' | 'idle'
+var dot = document.getElementById('globalStatus');
+var label = document.getElementById('statusText');
+dot.className = 'status-dot' + (state === 'ready' ? ' ready' : state === 'thinking' ? ' switching' : '');
+label.textContent = customLabel || { ready: 'Ready', thinking: 'Thinking…', error: 'Error', idle: 'Not Ready' }[state] || 'Not Ready';
+}
+
+function addBubble(role, text, isError, record) {
+var chat = document.getElementById('chat');
+
+if (role === 'note') {   // small centered notice, e.g. "switched to another provider"
+var note = document.createElement('div');
+note.className = 'msg note';
+var noteText = document.createElement('div');
+noteText.className = 'bubble';
+noteText.textContent = text;
+note.appendChild(noteText);
+chat.appendChild(note);
+if (record !== false) transcript.push({ role: 'note', text: text });
+return;
+}
+
+var wrapper = document.createElement('div');
+wrapper.className = 'msg ' + role;
+
+var avatar = document.createElement('div');
+avatar.className = 'avatar';
+avatar.textContent = role === 'user' ? '🧑' : '🤖';
+
+var bubble = document.createElement('div');
+bubble.className = 'bubble' + (isError ? ' error' : '');
+bubble.textContent = text;   // never innerHTML: no injection possible
+
+wrapper.appendChild(avatar);
+wrapper.appendChild(bubble);
+chat.appendChild(wrapper);
+
+if (record !== false) transcript.push({ role: role, text: text, isError: !!isError });
+}
+
+// ---------- Local persistence (conversation restored on reload) ----------
+
+function saveChat() {
+// A storage failure (private mode, quota) must never break the chat
+try {
+localStorage.setItem(STORE_KEY, JSON.stringify({
+model: models[activeIndex].id,
+messages: chatHistory,
+transcript: transcript
+}));
+} catch (e) { }
+}
+
+function clearChat() {
+try { localStorage.removeItem(STORE_KEY); } catch (e) { }
+}
+
+function restoreChat() {
+var raw;
+try { raw = localStorage.getItem(STORE_KEY); } catch (e) { return false; }
+if (!raw) return false;
+
+var data;
+try { data = JSON.parse(raw); } catch (e) { return false; }
+if (!data) return false;
+
+// the chosen provider is remembered even before the first message
+models.forEach(function (m, i) { if (m.id === data.model) activeIndex = i; });
+
+chatHistory = Array.isArray(data.messages) ? data.messages : [];
+transcript = [];
+if (!Array.isArray(data.transcript) || data.transcript.length === 0) return false;
+
+document.getElementById('chat').textContent = '';
+data.transcript.forEach(function (item) {
+if (!item || typeof item.text !== 'string') return;
+if (item.role === 'user') addBubble('user', item.text);
+else if (item.role === 'note') addBubble('note', item.text);
+else addBubble('bot', item.text, !!item.isError);
+});
+
+scrollToBottom();
+return transcript.length > 0;
+}
+
+function scrollToBottom() {
+var area = document.getElementById('chatWrap');
+area.scrollTop = area.scrollHeight;
+}
+
+function showWelcome() {
+var chat = document.getElementById('chat');
+chat.textContent = '';
+var welcome = document.createElement('div');
+welcome.className = 'welcome';
+welcome.id = 'welcome';
+var title = document.createElement('h1');
+title.textContent = 'Hello 👋';
+var text = document.createElement('p');
+text.textContent = 'I am a multi-model agent. Click "Select Model" at the top, add an API key, then start chatting.';
+welcome.appendChild(title);
+welcome.appendChild(text);
+chat.appendChild(welcome);
+}
+
+function updateSendButton() {
+var input = document.getElementById('messageInput');
+var button = document.getElementById('sendBtn');
+button.disabled = busy || input.value.trim().length === 0 || !readKey(models[activeIndex]);
+}
+
+function closeMenu() {
+document.getElementById('mainDropdown').removeAttribute('open');
+}
+
+// ---------- UI: statuses ----------
+
+function refreshUI() {
+var modelDef = models[activeIndex];
+document.getElementById('activeModelName').textContent = modelDef.name;
+
+var hasKey = !!readKey(modelDef);
+setStatus(hasKey ? 'ready' : 'idle');
+
+var totalKeys = models.filter(function (m) { return !!readKey(m); }).length;
+var counter = document.getElementById('keyCounter');
+counter.textContent = totalKeys + '/' + models.length;
+counter.classList.toggle('has-keys', totalKeys > 0);
+
+var input = document.getElementById('messageInput');
+input.placeholder = hasKey ? 'Type your message…  (Enter = send, Shift+Enter = new line)' : 'Add an API key in the menu first.';
+
+models.forEach(function (m, i) {
+var status = document.getElementById('status-' + i);
+if (!status) return;
+var saved = !!readKey(m);
+status.textContent = saved ? '✅ Saved' : 'Add key';
+status.className = 'key-status' + (saved ? ' saved' : '');
+
+var remove = document.getElementById('delete-' + i);
+if (remove) remove.hidden = !saved;
+});
+
+updateSendButton();
+saveChat();   // the chosen model is remembered too
+}
+
+// ---------- UI: menu generated from models ----------
+
+function buildMenu() {
+var container = document.getElementById('dropdownContent');
+container.textContent = '';
+
+models.forEach(function (modelDef, i) {
+var option = document.createElement('div');
+option.className = 'model-option';
+
+var details = document.createElement('details');
+details.className = 'key-details';
+
+var summary = document.createElement('summary');
+var name = document.createElement('span');
+name.textContent = modelDef.name;
+var status = document.createElement('span');
+status.id = 'status-' + i;
+status.className = 'key-status';
+status.textContent = 'Add key';
+summary.appendChild(name);
+summary.appendChild(status);
+
+var form = document.createElement('div');
+form.className = 'key-form';
+
+var link = document.createElement('a');
+link.href = modelDef.keyUrl;
+link.target = '_blank';
+link.rel = 'noopener noreferrer';
+link.textContent = 'Get a free API key →';
+
+var keyInput = document.createElement('input');
+keyInput.type = 'password';
+keyInput.id = 'input-' + i;
+keyInput.placeholder = modelDef.placeholder;
+keyInput.autocomplete = 'off';
+keyInput.spellcheck = false;
+
+var message = document.createElement('div');
+message.className = 'key-msg';
+message.id = 'key-msg-' + i;
+
+var save = document.createElement('button');
+save.type = 'button';
+save.textContent = 'Save Key';
+save.setAttribute('data-index', i);
+
+var remove = document.createElement('button');
+remove.type = 'button';
+remove.className = 'danger';
+remove.id = 'delete-' + i;
+remove.textContent = 'Delete key';
+remove.hidden = true;
+
+form.appendChild(link);
+form.appendChild(keyInput);
+form.appendChild(message);
+form.appendChild(save);
+form.appendChild(remove);
+
+details.appendChild(summary);
+details.appendChild(form);
+option.appendChild(details);
+container.appendChild(option);
+
+// Pick this model when its key is already saved
+summary.addEventListener('click', function () {
+if (readKey(modelDef)) {
+activeIndex = i;
+refreshUI();
+}
+});
+
+// Save the key
+save.addEventListener('click', function (e) {
+var target = e.currentTarget || save;
+saveKey(parseInt(target.getAttribute('data-index'), 10));
+});
+
+keyInput.addEventListener('keydown', function (e) {
+if (e.key === 'Enter') { e.preventDefault(); saveKey(i); }
+});
+
+// Delete the key
+remove.addEventListener('click', function () {
+localStorage.removeItem(modelDef.keyName);
+keyInput.value = '';
+var msg = document.getElementById('key-msg-' + i);
+msg.textContent = 'Key deleted.';
+msg.className = 'key-msg ok';
+refreshUI();
+});
+});
+}
+
+// ---------- API keys ----------
+
+function saveKey(index) {
+var modelDef = models[index];
+var keyInput = document.getElementById('input-' + index);
+var message = document.getElementById('key-msg-' + index);
+var value = keyInput.value.trim();
+
+message.className = 'key-msg';
+message.textContent = '';
+
+if (!value) {
+message.className = 'key-msg error';
+message.textContent = 'Paste a key before saving.';
+return;
+}
+if (value.length < 10) {
+message.className = 'key-msg error';
+message.textContent = 'This key looks too short.';
+return;
+}
+var knownPrefix = modelDef.prefixes.some(function (p) { return value.indexOf(p) === 0; });
+if (modelDef.prefixes.length && !knownPrefix) {
+message.className = 'key-msg error';
+message.textContent = 'A ' + modelDef.name + ' key usually starts with ' +
+modelDef.prefixes.map(function (p) { return '"' + p + '"'; }).join(' or ') +
+'. Check your copy-paste.';
+return;
+}
+
+localStorage.setItem(modelDef.keyName, value);
+keyInput.value = '';
+keyInput.type = 'password';
+
+message.className = 'key-msg ok';
+message.textContent = 'Key saved.';
+
+activeIndex = index;
+refreshUI();
+closeMenu();
+}
+
+// Providers wrap their errors differently: OpenAI-style, a bare array, or a plain object
+function readErrorDetail(body) {
+if (!body) return '';
+if (typeof body === 'string') return body;
+if (Array.isArray(body)) return body.length ? readErrorDetail(body[0]) : '';
+if (body.error) return readErrorDetail(body.error) || '';
+if (typeof body.message === 'string') return body.message;
+if (typeof body.detail === 'string') return body.detail;
+return '';
+}
+
+function shortReason(error) {
+var text = error && error.message ? String(error.message) : '';
+if (!text || text.length > 120 || text.indexOf('{') !== -1) return '';
+return text;
+}
+
+// ---------- One call to one provider ----------
+
+async function requestModel(modelDef, key) {
+var controller = new AbortController();
+var timer = setTimeout(function () { controller.abort(); }, 60000);
+
+try {
+var response = await fetch(modelDef.url, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': 'Bearer ' + key
+},
+body: JSON.stringify({ model: modelDef.model, messages: chatHistory }),
+signal: controller.signal
+});
+
+if (!response.ok) {
+var detail = '';
+try {
+var body = await response.json();
+detail = readErrorDetail(body);
+} catch (e) { /* body is not JSON */ }
+var apiError = new Error(detail || ('HTTP ' + response.status));
+apiError.status = response.status;
+throw apiError;
+}
+
+var data = await response.json();
+var replyText = data && data.choices && data.choices[0] && data.choices[0].message
+? data.choices[0].message.content
+: '';
+
+if (!replyText) throw new Error('Empty response from the model.');
+return replyText;
+} finally {
+clearTimeout(timer);
+}
+}
+
+function describeError(error, modelDef) {
+if (error.name === 'AbortError') {
+return 'Timed out: ' + modelDef.name + ' did not answer within 60 seconds.';
+}
+if (error.status === 400 || error.status === 401 || error.status === 403) {
+var reason = shortReason(error);
+return 'API key rejected by ' + modelDef.name + (reason ? ' (' + reason + ')' : '') + '. Check it in the "Select Model" menu.';
+}
+if (error.status === 429) {
+return 'Quota reached on ' + modelDef.name + '.';
+}
+if (error.status === 404) {
+return 'Model not found on ' + modelDef.name + ' (the model ID may have been retired).';
+}
+if (error.status >= 500) {
+return modelDef.name + ' is having a server-side problem (HTTP ' + error.status + ').';
+}
+if (error instanceof TypeError) {
+return 'Could not reach ' + modelDef.name + ' (network problem, or the provider blocked the browser).';
+}
+return modelDef.name + ': ' + error.message;
+}
+
+// ---------- Sending a message ----------
+
+async function send() {
+if (busy) return;
+
+var input = document.getElementById('messageInput');
+var text = input.value.trim();
+if (!text) return;
+
+var primary = activeIndex;
+var primaryDef = models[primary];
+if (!readKey(primaryDef)) return;
+
+var welcome = document.getElementById('welcome');
+if (welcome) welcome.remove();
+
+addBubble('user', text);
+input.value = '';
+input.style.height = 'auto';
+scrollToBottom();
+
+busy = true;
+updateSendButton();
+
+chatHistory.push({ role: 'user', content: text });
+saveChat();
+
+// Automatic failover: the selected provider first, then every other provider that has a key
+var candidates = [primary];
+models.forEach(function (m, i) {
+if (i !== primary && readKey(m)) candidates.push(i);
+});
+
+var failures = [];
+var answeredIndex = -1;
+var replyText = '';
+
+for (var c = 0; c < candidates.length && answeredIndex === -1; c++) {
+var index = candidates[c];
+var modelDef = models[index];
+setStatus('thinking', 'Thinking… (' + modelDef.name + ')');
+
+try {
+replyText = await requestModel(modelDef, readKey(modelDef));
+answeredIndex = index;
+} catch (error) {
+failures.push({ error: error, modelDef: modelDef });
+}
+}
+
+if (answeredIndex !== -1) {
+var answeredDef = models[answeredIndex];
+
+if (answeredIndex !== primary) {
+addBubble('note', '↪ ' + primaryDef.name + ' failed — switched automatically to ' + answeredDef.name + '.');
+activeIndex = answeredIndex;   // stay on the provider that actually answers
+refreshUI();
+}
+
+chatHistory.push({ role: 'assistant', content: replyText });
+addBubble('bot', replyText);
+setStatus('ready');
+} else {
+// nothing answered: keep the failed message out of the model history
+if (chatHistory.length && chatHistory[chatHistory.length - 1].role === 'user') chatHistory.pop();
+
+var first = failures[0];
+var message = describeError(first.error, first.modelDef);
+if (failures.length > 1) {
+message += ' Also tried: ' + failures.slice(1).map(function (f) { return f.modelDef.name; }).join(', ') + '.';
+}
+
+addBubble('bot', message, true);
+setStatus('error');
+}
+
+saveChat();
+busy = false;
+updateSendButton();
+scrollToBottom();
+document.getElementById('messageInput').focus();
+}
+
+// ---------- Wiring ----------
+
+document.getElementById('sendBtn').addEventListener('click', send);
+
+document.getElementById('messageInput').addEventListener('input', function () {
+var input = this;
+input.style.height = 'auto';
+input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+updateSendButton();
+});
+
+document.getElementById('messageInput').addEventListener('keydown', function (e) {
+if (e.key === 'Enter' && !e.shiftKey) {
+e.preventDefault();
+if (!document.getElementById('sendBtn').disabled) send();
+}
+});
+
+document.getElementById('newChatBtn').addEventListener('click', function () {
+if (busy) return;
+chatHistory = [];
+transcript = [];
+clearChat();
+showWelcome();
+refreshUI();
+document.getElementById('messageInput').focus();
+});
+
+// ---------- Boot ----------
+buildMenu();
+if (!restoreChat()) showWelcome();   // bring back the saved conversation, if any
+refreshUI();
+</script>
+</body>
+</html>
