@@ -184,10 +184,10 @@ model: 'openai/gpt-oss-120b',
 keyName: 'ma_cle_groq', placeholder: 'gsk_...', prefixes: ['gsk_'], keyUrl: 'https://console.groq.com/keys'
 },
 {
-id: 'aihubmix', name: 'AIHubMix Gemma (free)',
-url: 'https://aihubmix.com/v1/chat/completions',
-model: 'gemma-4-31b-it-free',   // the "-free" routes cost nothing: no balance to run out of
-keyName: 'ma_cle_aihubmix', placeholder: 'Your AIHubMix key', prefixes: [], keyUrl: 'https://console.aihubmix.com'
+id: 'mistral', name: 'Mistral (free mode)',
+url: 'https://api.mistral.ai/v1/chat/completions',
+model: 'mistral-small-latest',   // free mode: included monthly usage, no prepaid balance
+keyName: 'ma_cle_mistral', placeholder: 'Your Mistral API key', prefixes: [], keyUrl: 'https://console.mistral.ai/api-keys'
 },
 {
 id: 'cohere', name: 'Cohere (436K)',
