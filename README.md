@@ -14,7 +14,7 @@ Created by [moonspiid](https://twitter.com/moonspiid) · © 2026 — 100% Free
 
 ## Features
 
-- **Five providers, one interface** — OpenRouter, Google Gemini, Groq, Mistral and OVHcloud, all through the same OpenAI-compatible endpoint.
+- **Five providers, one interface** — OpenRouter, Google Gemini, Groq, DeepSeek and Anthropic Claude. The first four share one OpenAI-compatible request format; Anthropic uses its own Messages format, and the app switches headers, body and reply parsing per provider.
 - **Automatic failover** — if the selected provider fails (invalid key, quota, outage, timeout), the app tries every other provider you have a key for and tells you which one answered.
 - **Local conversation history** — the chat and your selected model are saved in the browser and restored when you come back.
 - **Keys never leave the browser** — API keys are stored in `localStorage` and sent straight to the provider, never to a third-party server.
@@ -38,17 +38,28 @@ Keys are stored per browser, so you only paste them once. Use the **Delete key**
 | OpenRouter | `meta-llama/llama-4-scout:free` | `sk-or-` |
 | Google Gemini | `gemini-3.5-flash-lite` | `AIza`, `AQ.` |
 | Groq | `openai/gpt-oss-120b` | `gsk_` |
-| Mistral | `mistral-small-latest` | — |
-| OVHcloud | `Meta-Llama-3_3-70B-Instruct` | — |
+| DeepSeek | `deepseek-flash` | `sk-` |
+| Anthropic Claude | `claude-haiku-5-5` | `sk-ant-` |
 
 To use another model, edit the `models` array at the top of the `<script>` block. It is the single source of truth: the dropdown, the key forms and the failover chain are all generated from it.
+
+Each entry is also the description of how to talk to that provider:
+
+| Field | Meaning |
+| --- | --- |
+| `url`, `model` | Where the request goes and which model ID it asks for |
+| `keyName` | `localStorage` slot holding that provider's key |
+| `keyUrl`, `placeholder`, `prefixes` | Link to get a key, input hint, and the prefixes the key is checked against before saving |
+| `style` | `'anthropic'` for the Messages API (`x-api-key` header, `anthropic-version`, `max_tokens`, reply in `content[]`); omitted for OpenAI-compatible providers (`Authorization: Bearer`, reply in `choices[0].message.content`) |
+| `maxTokens` | Output ceiling, Anthropic only |
 
 ## Notes
 
 - Each request has a 60 second timeout.
 - Replies are shown as plain text: Markdown is not rendered.
 - Keys stored in `localStorage` are readable by any script running on the same page, so host the file on a trusted origin and avoid shared computers.
-- Providers must allow browser requests (CORS). All five listed above do.
+- Providers must allow browser requests (CORS). All five listed above do; Anthropic requires the `anthropic-dangerous-direct-browser-access: true` header, which the app sends.
+- Anthropic's API has no standing free tier: new accounts get a small amount of test credit, after which it is prepaid. DeepSeek gives new accounts trial credit; Haiku is its cheapest Claude model.
 
 ## License
 

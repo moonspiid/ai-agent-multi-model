@@ -184,16 +184,18 @@ model: 'openai/gpt-oss-120b',
 keyName: 'ma_cle_groq', placeholder: 'gsk_...', prefixes: ['gsk_'], keyUrl: 'https://console.groq.com/keys'
 },
 {
-id: 'mistral', name: 'Mistral (256K)',
-url: 'https://api.mistral.ai/v1/chat/completions',
-model: 'mistral-small-latest',
-keyName: 'ma_cle_mistral', placeholder: 'Your Mistral key', prefixes: [], keyUrl: 'https://console.mistral.ai/api-keys/'
+id: 'deepseek', name: 'DeepSeek (1M)',
+url: 'https://api.deepseek.com/chat/completions',
+model: 'deepseek-flash',
+keyName: 'ma_cle_deepseek', placeholder: 'sk-...', prefixes: ['sk-'], keyUrl: 'https://platform.deepseek.com/api_keys'
 },
 {
-id: 'ovh', name: 'OVHcloud (131K)',
-url: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions',
-model: 'Meta-Llama-3_3-70B-Instruct',
-keyName: 'ma_cle_ovh', placeholder: 'Your OVHcloud token', prefixes: [], keyUrl: 'https://endpoints.ai.cloud.ovh.net/'
+id: 'anthropic', name: 'Anthropic Claude (1M)',
+url: 'https://api.anthropic.com/v1/messages',
+model: 'claude-haiku-5-5',
+style: 'anthropic',   // Messages API: its own headers, body and reply shape
+maxTokens: 4096,
+keyName: 'ma_cle_anthropic', placeholder: 'sk-ant-...', prefixes: ['sk-ant-'], keyUrl: 'https://console.anthropic.com/settings/keys'
 }
 ];
 
@@ -513,18 +515,46 @@ return text;
 
 // ---------- One call to one provider ----------
 
+// OpenAI-style providers reply in choices[0].message.content, Anthropic in a content array
+function readReply(data) {
+if (!data) return '';
+if (data.choices && data.choices[0] && data.choices[0].message) {
+return data.choices[0].message.content || '';
+}
+if (typeof data.content === 'string') return data.content;
+if (Array.isArray(data.content)) {
+return data.content
+.filter(function (part) { return part && part.type === 'text' && part.text; })
+.map(function (part) { return part.text; })
+.join('');
+}
+return '';
+}
+
 async function requestModel(modelDef, key) {
 var controller = new AbortController();
 var timer = setTimeout(function () { controller.abort(); }, 60000);
 
+// Every provider reads the key from a header, but not the same one
+var headers = { 'Content-Type': 'application/json' };
+if (modelDef.style === 'anthropic') {
+headers['x-api-key'] = key;
+headers['anthropic-version'] = '2023-06-01';
+headers['anthropic-dangerous-direct-browser-access'] = 'true';   // allows calls from a browser page
+} else {
+headers['Authorization'] = 'Bearer ' + key;   // OpenAI-compatible providers
+}
+
+// Anthropic needs a max_tokens value and uses the same messages array as the others
+var payload = modelDef.style === 'anthropic'
+? { model: modelDef.model, max_tokens: modelDef.maxTokens || 4096, messages: chatHistory }
+: { model: modelDef.model, messages: chatHistory };
+
 try {
 var response = await fetch(modelDef.url, {
 method: 'POST',
-headers: {
-'Content-Type': 'application/json',
-'Authorization': 'Bearer ' + key
-},
-body: JSON.stringify({ model: modelDef.model, messages: chatHistory }),
+headers: headers,
+body: JSON.stringify(payload),
 signal: controller.signal
 });
 
@@ -540,9 +570,7 @@ throw apiError;
 }
 
 var data = await response.json();
-var replyText = data && data.choices && data.choices[0] && data.choices[0].message
-? data.choices[0].message.content
-: '';
+var replyText = readReply(data);
 
 if (!replyText) throw new Error('Empty response from the model.');
 return replyText;
