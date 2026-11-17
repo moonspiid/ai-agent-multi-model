@@ -735,5 +735,8 @@ buildMenu();
 if (!restoreChat()) showWelcome();   // bring back the saved conversation, if any
 refreshUI();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script> 
+ <script> function exportSessions() { const raw = localStorage.getItem('conversation_v1'); if (!raw) { alert('No sessions found'); return; } const data = new TextEncoder().encode(raw); const compressed = pako.gzip(data); const blob = new Blob([compressed], { type: 'application/gzip' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'sessions.tar.gz'; a.click(); } </script> 
+
 </body>
 </html>
