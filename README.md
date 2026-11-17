@@ -58,6 +58,7 @@ Each entry is also the description of how to talk to that provider:
 - Replies are shown as plain text: Markdown is not rendered.
 - Keys stored in `localStorage` are readable by any script running on the same page, so host the file on a trusted origin and avoid shared computers.
 - Providers must allow browser requests (CORS). All five listed above do.
+- UnoRouter asks for a one-time consent per upstream provider before it serves some of its free models. When that happens the chat says so and links to the consent page; allow it once and the model answers from then on. `gpt-oss-120b:free` works without any consent and is a good first test of a UnoRouter key.
 - What you get for free: OpenRouter's free models, the Gemini API free tier, Groq's free plan, Cohere trial keys (1,000 calls a month, 20 requests a minute, renewed monthly) and UnoRouter's `:free` models (no card, roughly one request per minute per model). None of them needs a prepaid balance that can be exhausted for good.
 - Every provider above was checked to allow browser requests with the headers the app sends. Some otherwise free providers (Z.ai, Cloudflare Workers AI, NVIDIA NIM, Vercel AI Gateway) block browser calls, so they are deliberately not in the list. AIHubMix passes CORS but caps accounts that never recharged at 10 free requests in total, so it was dropped too.
 

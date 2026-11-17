@@ -584,6 +584,12 @@ return 'Timed out: ' + modelDef.name + ' did not answer within 60 seconds.';
 if (error.status === 402 || /credit balance|insufficient balance|insufficient_quota|billing/i.test(error.message || '')) {
 return 'No credit left on ' + modelDef.name + ' — add credits in that provider\'s console to use it again (the key itself is valid).';
 }
+if (error.status === 403 && /consent/i.test(error.message || '')) {
+// UnoRouter asks for a one-time consent before it serves some free models
+var consentLink = (String(error.message).match(/https?:\/\/[^\s;,)]+/) || [])[0];
+return 'One-time consent needed on ' + modelDef.name + ': open ' +
+(consentLink || 'your account\'s consents page') + ', allow that provider, then send again.';
+}
 if (error.status === 400 || error.status === 401 || error.status === 403) {
 var reason = shortReason(error);
 return 'API key rejected by ' + modelDef.name + (reason ? ' (' + reason + ')' : '') + '. Check it in the "Select Model" menu.';
