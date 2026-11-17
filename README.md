@@ -1,5 +1,7 @@
 # AI Agent · Multi-Model
 
+![The chat answering a question, with the model menu closed](screenshot.png)
+
 A single-file, zero-install web chat that talks to several AI providers from your browser. Open `index.html`, paste an API key, start chatting. No build step, no server, no dependency.
 
 ### ▶️ Try it online
