@@ -2,6 +2,10 @@
 
 A single-file, zero-install web chat that talks to several AI providers from your browser. Open `index.html`, paste an API key, start chatting. No build step, no server, no dependency.
 
+### ▶️ [Try it online](https://moonspiid.github.io/ai-agent-multi-model/)
+
+No install needed: pick a provider, paste your own API key (it stays in your browser), and start chatting.
+
 Created by [moonspiid](https://twitter.com/moonspiid) · © 2026 — 100% Free
 
 ## Features
