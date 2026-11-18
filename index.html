@@ -16,8 +16,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 header { background: var(--panel); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; flex-direction: column; gap: 8px; position: relative; }
 .header-top { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
 .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-radius: 9px; display: grid; place-items: center; font-size: 18px; }
-.new-chat-btn { margin-left: auto; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text-dim); font-size: 16px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+.new-chat-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text-dim); font-size: 16px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
 .new-chat-btn:hover { color: var(--text); border-color: var(--accent); }
+.history-btn { margin-left: auto; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text-dim); font-size: 14px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+.history-btn:hover, .history-btn.open { color: var(--text); border-color: var(--accent); }
+
+.history-panel { position: absolute; top: 52px; right: 20px; width: 320px; max-width: calc(100vw - 32px); background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 120; display: none; overflow: hidden; }
+.history-panel.open { display: block; }
+.history-head { padding: 10px 12px; font-size: 11px; font-weight: 600; color: var(--text-dim); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
+.history-item { display: flex; gap: 8px; align-items: baseline; padding: 8px 12px; font-size: 12px; border-bottom: 1px solid var(--border); }
+.history-item:last-child { border-bottom: none; }
+.history-role { flex: 0 0 auto; font-size: 10px; font-weight: 700; color: var(--text-dim); width: 26px; }
+.history-item.user .history-role { color: var(--accent); }
+.history-item.bot .history-role { color: var(--green); }
+.history-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.history-empty { padding: 12px; font-size: 12px; color: var(--text-dim); }
 
 .status-bar { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-dim); gap: 10px; }
 
@@ -119,7 +132,12 @@ textarea::placeholder { color: var(--text-dim); }
 <div class="header-top">
 <div class="logo-icon">🤖</div>
 <span>AI Agent · Multi-Model</span>
+<button class="history-btn" id="historyBtn" title="History (last 10 lines)" aria-label="History" aria-expanded="false">🕘</button>
 <button class="new-chat-btn" id="newChatBtn" title="New chat" aria-label="New chat">＋</button>
+<div class="history-panel" id="historyPanel">
+<div class="history-head">History · last 10 lines</div>
+<div id="historyList"></div>
+</div>
 </div>
 <div class="status-bar">
 <span style="display: flex; align-items: center;">
@@ -322,6 +340,54 @@ text.textContent = 'I am a multi-model agent. Click "Select Model" at the top, a
 welcome.appendChild(title);
 welcome.appendChild(text);
 chat.appendChild(welcome);
+}
+
+// ---------- UI: history panel (only the last 10 lines) ----------
+
+var HISTORY_LIMIT = 10;
+
+function renderHistory() {
+var list = document.getElementById('historyList');
+list.textContent = '';
+
+var items = transcript.slice(-HISTORY_LIMIT);   // never more than 10 lines
+if (items.length === 0) {
+var empty = document.createElement('div');
+empty.className = 'history-empty';
+empty.textContent = 'No messages yet.';
+list.appendChild(empty);
+return;
+}
+
+items.forEach(function (item) {
+var row = document.createElement('div');
+row.className = 'history-item ' + (item.role === 'user' ? 'user' : 'bot');
+
+var role = document.createElement('span');
+role.className = 'history-role';
+role.textContent = item.role === 'user' ? 'You' : item.role === 'note' ? '↪' : 'AI';
+
+var text = document.createElement('span');
+text.className = 'history-text';
+var oneLine = item.text.replace(/\s+/g, ' ').trim();
+text.textContent = oneLine.length > 90 ? oneLine.slice(0, 90) + '…' : oneLine;
+row.title = oneLine;
+
+row.appendChild(role);
+row.appendChild(text);
+list.appendChild(row);
+});
+}
+
+function toggleHistory(force) {
+var panel = document.getElementById('historyPanel');
+var trigger = document.getElementById('historyBtn');
+var open = typeof force === 'boolean' ? force : !panel.classList.contains('open');
+
+if (open) renderHistory();
+panel.classList.toggle('open', open);
+trigger.classList.toggle('open', open);
+trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
 function updateSendButton() {
@@ -720,8 +786,26 @@ if (!document.getElementById('sendBtn').disabled) send();
 }
 });
 
+document.getElementById('historyBtn').addEventListener('click', function (e) {
+e.stopPropagation();
+closeMenu();
+toggleHistory();
+});
+
+document.addEventListener('click', function (e) {
+var panel = document.getElementById('historyPanel');
+if (!panel.classList.contains('open')) return;
+if (panel.contains(e.target) || e.target.closest('#historyBtn')) return;
+toggleHistory(false);
+});
+
+document.addEventListener('keydown', function (e) {
+if (e.key === 'Escape') toggleHistory(false);
+});
+
 document.getElementById('newChatBtn').addEventListener('click', function () {
 if (busy) return;
+toggleHistory(false);
 chatHistory = [];
 transcript = [];
 clearChat();
