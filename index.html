@@ -568,7 +568,7 @@ link.rel = 'noopener noreferrer';
 link.textContent = 'Get a free API key →';
 
 var keyInput = document.createElement('input');
-keyInput.type = 'password';
+keyInput.type = 'text';   // keep the pasted key readable, so it can be checked
 keyInput.id = 'input-' + i;
 keyInput.placeholder = modelDef.placeholder;
 keyInput.autocomplete = 'off';
@@ -663,7 +663,6 @@ return;
 
 localStorage.setItem(modelDef.keyName, value);
 keyInput.value = '';
-keyInput.type = 'password';
 
 message.className = 'key-msg ok';
 message.textContent = 'Key saved.';
@@ -884,8 +883,8 @@ if (visible > viewportMax) viewportMax = visible;
 // The visible area is pinned whatever the browser does with the layout viewport
 document.documentElement.style.setProperty('--app-height', Math.round(visible) + 'px');
 
-// Keyboard open = the visible area lost height while the message box has the focus
-var typing = document.activeElement === document.getElementById('messageInput');
+// Keyboard open = the visible area lost height while a text field has the focus
+var typing = !!document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
 var keyboardOpen = typing && (viewportMax - visible) > 120;
 document.body.classList.toggle('kb-open', keyboardOpen);
 
