@@ -1,0 +1,7 @@
+# Dossier de travail du runner : cle privee, kits, journaux - jamais commite
+workspace/
+
+# Secrets locaux eventuels
+.env
+.env.*
+!.env.example

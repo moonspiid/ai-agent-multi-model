@@ -1,0 +1,12 @@
+{
+  "name": "ai-agent-multi-model",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "runner": "node server.js",
+    "start": "bash start-termux.sh"
+  }
+}
