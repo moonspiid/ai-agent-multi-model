@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <title>AI Agent · Multi-Model</title>
+<meta name="description" content="Free multi-model chat: five AI providers, one interface, automatic failover when one runs dry.">
+<meta name="theme-color" content="#0f1117">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AI Agent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
@@ -952,6 +960,14 @@ document.getElementById('messageInput').focus();
 buildMenu();
 if (!restoreChat()) showWelcome();   // bring back the saved conversation, if any
 refreshUI();
+
+// Installable app: the service worker caches the shell, so Chrome (and most mobile browsers)
+// offer "Install" / "Add to home screen" and the app still opens without a network
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+window.addEventListener('load', function () {
+navigator.serviceWorker.register('sw.js').catch(function () { /* offline mode is optional */ });
+});
+}
 </script>
 </body>
 </html>

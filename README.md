@@ -1,6 +1,6 @@
 # AI Agent · Multi-Model
 
-![The chat answering two short questions with the default GPT-OSS 120B model, model menu closed](screenshot.png)
+![The chat answering two short questions with the model menu open, showing the pasted API key in clear text](screenshot.png)
 
 A single-file, zero-install web chat that talks to several AI providers from your browser. Open `index.html`, paste an API key, start chatting. No build step, no server, no dependency.
 
@@ -9,6 +9,8 @@ A single-file, zero-install web chat that talks to several AI providers from you
 [GitHub Pages](https://moonspiid.github.io/ai-agent-multi-model/)
 
 No install needed: pick a provider, paste your own API key (it stays in your browser), and start chatting.
+
+**Install it as an app** — in Chrome, click the install icon in the address bar (or ⋮ menu → *Install AI Agent*); on Android use *Add to home screen*, on iPhone *Share → Add to Home Screen*. It then runs in its own window with its own icon, and the interface still opens offline (sending messages needs a connection).
 
 Created by [moonspiid](https://twitter.com/moonspiid) · © 2026 — 100% Free
 
@@ -19,6 +21,7 @@ Created by [moonspiid](https://twitter.com/moonspiid) · © 2026 — 100% Free
 - **Local conversation history** — the open chat is saved in the browser and restored when you come back. The 🕘 button lists your last 10 conversations, titled by their first message; click one to reload it.
 - **Keys never leave the browser** — API keys are stored in `localStorage` and sent straight to the provider, never to a third-party server.
 - **No markup injection** — messages are rendered with `textContent`, never `innerHTML`.
+- **Installable app** — a web app manifest, icons and a service worker let Chrome install it as a standalone app; the shell is cached, so it opens even offline.
 - **Keyboard friendly** — Enter sends, Shift+Enter makes a new line.
 - **Clear errors** — HTTP status codes are translated into readable messages (rejected key, quota, retired model, outage, network block, 60 s timeout).
 
