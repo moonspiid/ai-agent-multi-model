@@ -66,6 +66,12 @@ Each entry is also the description of how to talk to that provider:
 - What you get for free: OpenRouter's free models, the Gemini API free tier, Groq's free plan, Cohere trial keys (1,000 calls a month, 20 requests a minute, renewed monthly) and UnoRouter's `:free` models (no card, roughly one request per minute per model). None of them needs a prepaid balance that can be exhausted for good.
 - Every provider above was checked to allow browser requests with the headers the app sends. Some otherwise free providers (Z.ai, Cloudflare Workers AI, NVIDIA NIM, Vercel AI Gateway) block browser calls, so they are deliberately not in the list. AIHubMix passes CORS but caps accounts that never recharged at 10 free requests in total, so it was dropped too.
 
+## Tags
+
+#Freebuff #AI #LLM #FreeAPI #OpenSource #PWA
+
+`ai` `ai-chat` `chatgpt` `llm` `free-api` `openrouter` `gemini` `groq` `pwa` `single-file` `javascript` `html` `open-source`
+
 ## License
 
 Free to use and modify.
