@@ -1,5 +1,17 @@
 # AI Agent · Multi-Model
 
+<p>
+  <img alt="ai-chat, multi-model" src="https://img.shields.io/badge/ai--chat-multi--model-ff2d8f?labelColor=30363d">
+  <img alt="5 free providers" src="https://img.shields.io/badge/providers-5%20free-2ea043?labelColor=30363d">
+  <img alt="automatic failover" src="https://img.shields.io/badge/failover-automatic-1f6feb?labelColor=30363d">
+  <img alt="no build step" src="https://img.shields.io/badge/build-none-8957e5?labelColor=30363d">
+  <br>
+  <img alt="installable PWA" src="https://img.shields.io/badge/pwa-installable-ea7a15?labelColor=30363d">
+  <img alt="keys stored locally" src="https://img.shields.io/badge/keys-stored%20locally-3fb950?labelColor=30363d">
+  <img alt="local history" src="https://img.shields.io/badge/history-local-bf8700?labelColor=30363d">
+  <img alt="price, free" src="https://img.shields.io/badge/price-free-2ea043?labelColor=30363d">
+</p>
+
 ![The chat answering two short questions with the model menu open, showing the pasted API key in clear text](screenshot.png)
 
 A single-file, zero-install web chat that talks to several AI providers from your browser. Open `index.html`, paste an API key, start chatting. No build step, no server, no dependency.
