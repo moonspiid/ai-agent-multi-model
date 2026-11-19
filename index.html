@@ -121,6 +121,15 @@ textarea { flex: 1; background: transparent; border: none; color: var(--text); f
 textarea::placeholder { color: var(--text-dim); }
 .send-btn { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-size: 18px; cursor: pointer; display: grid; place-items: center; }
 .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.attach-btn { flex: 0 0 auto; width: 34px; height: 34px; margin-bottom: 3px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text-dim); font-size: 20px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.attach-btn:hover { color: var(--text); border-color: var(--accent); }
+.attachments { max-width: 860px; margin: 0 auto 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+.attachments:empty { display: none; }
+.thumb { position: relative; width: 62px; height: 62px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--panel-2); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb button { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border: none; border-radius: 50%; background: rgba(0, 0, 0, 0.65); color: #fff; font-size: 12px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.bubble .attached { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.bubble .attached img { width: 92px; height: 92px; object-fit: cover; border-radius: 8px; display: block; border: 1px solid rgba(255, 255, 255, 0.3); }
 
 .footer-container { max-width: 860px; margin: 12px auto 0; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 11px; color: var(--text-dim); }
 .hint-text { text-align: center; font-size: 11px; }
@@ -170,7 +179,10 @@ textarea::placeholder { color: var(--text-dim); }
 </div>
 
 <div class="composer">
+<div class="attachments" id="attachments"></div>
 <div class="composer-inner">
+<button class="attach-btn" id="attachBtn" type="button" aria-label="Attach an image" title="Attach an image (needs a model that can see images)">+</button>
+<input type="file" id="fileInput" accept="image/*" multiple hidden>
 <textarea id="messageInput" rows="1" placeholder="Select a model first…"></textarea>
 <button class="send-btn" id="sendBtn" disabled aria-label="Send">➤</button>
 </div>
@@ -233,6 +245,87 @@ var transcript = [];  // what is displayed on screen, saved locally with chatHis
 var busy = false;     // is a request in flight?
 var STORE_KEY = 'conversation_v1';   // localStorage slot holding the saved conversation
 
+// ---------- Attachments (images sent with the message) ----------
+var pendingImages = [];   // data URLs waiting to be sent with the next message
+var MAX_IMAGES = 4;       // per message, keeps requests and the saved conversation small
+var MAX_EDGE = 1024;      // longest side kept when an image is shrunk before sending
+
+// Shrink an image so a photo does not blow up the request or localStorage
+function prepareImage(file) {
+return new Promise(function (resolve, reject) {
+var reader = new FileReader();
+reader.onerror = function () { reject(new Error('unreadable')); };
+reader.onload = function () {
+var picture = new Image();
+picture.onerror = function () { reject(new Error('unreadable')); };
+picture.onload = function () {
+var scale = Math.min(1, MAX_EDGE / Math.max(picture.width, picture.height));
+var canvas = document.createElement('canvas');
+canvas.width = Math.max(1, Math.round(picture.width * scale));
+canvas.height = Math.max(1, Math.round(picture.height * scale));
+canvas.getContext('2d').drawImage(picture, 0, 0, canvas.width, canvas.height);
+
+var keepPng = /^image\/png$/i.test(file.type);
+var dataUrl = canvas.toDataURL(keepPng ? 'image/png' : 'image/jpeg', 0.85);
+if (dataUrl.length > 900000) dataUrl = canvas.toDataURL('image/jpeg', 0.7);   // still too big: compress harder
+resolve(dataUrl);
+};
+picture.src = reader.result;
+};
+reader.readAsDataURL(file);
+});
+}
+
+function renderAttachments() {
+var strip = document.getElementById('attachments');
+strip.textContent = '';
+pendingImages.forEach(function (src, index) {
+var box = document.createElement('div');
+box.className = 'thumb';
+
+var picture = document.createElement('img');
+picture.src = src;
+picture.alt = 'Attached image ' + (index + 1);
+
+var remove = document.createElement('button');
+remove.type = 'button';
+remove.textContent = '×';
+remove.setAttribute('aria-label', 'Remove image ' + (index + 1));
+remove.addEventListener('click', function () {
+pendingImages.splice(index, 1);
+renderAttachments();
+updateSendButton();
+});
+
+box.appendChild(picture);
+box.appendChild(remove);
+strip.appendChild(box);
+});
+}
+
+async function addImages(fileList) {
+var files = Array.prototype.slice.call(fileList || []).filter(function (file) {
+return /^image\//.test(file.type);
+});
+if (files.length === 0) return;
+
+var room = MAX_IMAGES - pendingImages.length;
+if (room <= 0) {
+addBubble('note', 'Up to ' + MAX_IMAGES + ' images per message.', false, false);
+return;
+}
+
+files = files.slice(0, room);
+if (files.length < fileList.length) addBubble('note', 'Up to ' + MAX_IMAGES + ' images per message.', false, false);
+
+for (var i = 0; i < files.length; i++) {
+try { pendingImages.push(await prepareImage(files[i])); }
+catch (e) { addBubble('note', 'That file could not be read as an image.', false, false); }
+}
+renderAttachments();
+updateSendButton();
+}
+
 // System prompt prepended to every request (not stored in the conversation),
 // so every provider gives short answers and spends fewer tokens
 var SYSTEM_PROMPT = 'You are a concise assistant. Answer in as few tokens as possible: give the direct answer first, ' +
@@ -256,7 +349,7 @@ dot.className = 'status-dot' + (state === 'ready' ? ' ready' : state === 'thinki
 label.textContent = customLabel || { ready: 'Ready', thinking: 'Thinking…', error: 'Error', idle: 'Not Ready' }[state] || 'Not Ready';
 }
 
-function addBubble(role, text, isError, record) {
+function addBubble(role, text, isError, record, images) {
 var chat = document.getElementById('chat');
 
 if (role === 'note') {   // small centered notice, e.g. "switched to another provider"
@@ -280,13 +373,30 @@ avatar.textContent = role === 'user' ? '🧑' : '🤖';
 
 var bubble = document.createElement('div');
 bubble.className = 'bubble' + (isError ? ' error' : '');
-bubble.textContent = text;   // never innerHTML: no injection possible
+
+// Attached images stay above the text; text is still added as a text node (never innerHTML)
+if (images && images.length) {
+var strip = document.createElement('div');
+strip.className = 'attached';
+images.forEach(function (src) {
+var picture = document.createElement('img');
+picture.src = src;
+picture.alt = 'Attached image';
+strip.appendChild(picture);
+});
+bubble.appendChild(strip);
+}
+if (text) bubble.appendChild(document.createTextNode(text));
 
 wrapper.appendChild(avatar);
 wrapper.appendChild(bubble);
 chat.appendChild(wrapper);
 
-if (record !== false) transcript.push({ role: role, text: text, isError: !!isError });
+if (record !== false) {
+var entry = { role: role, text: text, isError: !!isError };
+if (images && images.length) entry.images = images.slice();
+transcript.push(entry);
+}
 }
 
 // ---------- Local persistence (conversation restored on reload) ----------
@@ -334,7 +444,7 @@ transcript = [];
 document.getElementById('chat').textContent = '';
 items.forEach(function (item) {
 if (!item || typeof item.text !== 'string') return;
-if (item.role === 'user') addBubble('user', item.text);
+if (item.role === 'user') addBubble('user', item.text, false, true, item.images);
 else if (item.role === 'note') addBubble('note', item.text);
 else addBubble('bot', item.text, !!item.isError);
 });
@@ -388,7 +498,7 @@ try { localStorage.setItem(CONV_KEY, JSON.stringify(list)); } catch (e) { }
 function conversationTitle(conv) {
 var first = '';
 (conv.transcript || []).forEach(function (item) {
-if (!first && item && item.role === 'user' && typeof item.text === 'string') first = item.text;
+if (!first && item && item.role === 'user' && typeof item.text === 'string') first = item.text || (item.images && item.images.length ? 'Image' : '');
 });
 var line = (first || 'Untitled chat').replace(/\s+/g, ' ').trim();
 return line.length > 60 ? line.slice(0, 60) + '…' : line;
@@ -505,7 +615,8 @@ input.placeholder = hasKey
 function updateSendButton() {
 var input = document.getElementById('messageInput');
 var button = document.getElementById('sendBtn');
-button.disabled = busy || input.value.trim().length === 0 || !readKey(models[activeIndex]);
+var hasContent = input.value.trim().length > 0 || pendingImages.length > 0;
+button.disabled = busy || !hasContent || !readKey(models[activeIndex]);
 }
 
 function closeMenu() {
@@ -776,6 +887,9 @@ var consentLink = (String(error.message).match(/https?:\/\/[^\s;,)]+/) || [])[0]
 return 'One-time consent needed on ' + modelDef.name + ': open ' +
 (consentLink || 'your account\'s consents page') + ', allow that provider, then send again.';
 }
+if (error.status === 400 && /image|vision|multimodal|media/i.test(error.message || '')) {
+return modelDef.name + ' cannot read images with its current model — switch to a model that accepts images, or send the text without the picture.';
+}
 if (error.status === 400 || error.status === 401 || error.status === 403) {
 var reason = shortReason(error);
 return 'API key rejected by ' + modelDef.name + (reason ? ' (' + reason + ')' : '') + '. Check it in the "Select Model" menu.';
@@ -797,12 +911,24 @@ return modelDef.name + ': ' + error.message;
 
 // ---------- Sending a message ----------
 
+// Plain text stays a string; images become OpenAI-style content parts (the format every
+// provider on this list understands, Gemini included through its OpenAI-compatible endpoint)
+function buildUserContent(text, images) {
+if (!images || images.length === 0) return text;
+var parts = images.map(function (src) {
+return { type: 'image_url', image_url: { url: src } };
+});
+if (text) parts.push({ type: 'text', text: text });
+return parts;
+}
+
 async function send() {
 if (busy) return;
 
 var input = document.getElementById('messageInput');
 var text = input.value.trim();
-if (!text) return;
+var images = pendingImages.slice();
+if (!text && images.length === 0) return;
 
 var primary = activeIndex;
 var primaryDef = models[primary];
@@ -811,7 +937,9 @@ if (!readKey(primaryDef)) return;
 var welcome = document.getElementById('welcome');
 if (welcome) welcome.remove();
 
-addBubble('user', text);
+addBubble('user', text, false, true, images);
+pendingImages = [];
+renderAttachments();
 input.value = '';
 input.style.height = 'auto';
 scrollToBottom();
@@ -819,7 +947,7 @@ scrollToBottom();
 busy = true;
 updateSendButton();
 
-chatHistory.push({ role: 'user', content: text });
+chatHistory.push({ role: 'user', content: buildUserContent(text, images) });
 saveChat();
 
 // Automatic failover: the selected provider first, then every other provider that has a key
@@ -911,6 +1039,15 @@ window.addEventListener('orientationchange', resetViewport);
 syncViewport();
 
 document.getElementById('sendBtn').addEventListener('click', send);
+
+// "+" opens the file picker; chosen images become thumbnails above the input
+document.getElementById('attachBtn').addEventListener('click', function () {
+document.getElementById('fileInput').click();
+});
+document.getElementById('fileInput').addEventListener('change', function () {
+addImages(this.files);
+this.value = '';   // so picking the same image twice still fires
+});
 
 document.getElementById('messageInput').addEventListener('input', function () {
 var input = this;

@@ -21,6 +21,7 @@ Created by [moonspiid](https://twitter.com/moonspiid) · © 2026 — 100% Free
 - **Local conversation history** — the open chat is saved in the browser and restored when you come back. The 🕘 button lists your last 10 conversations, titled by their first message; click one to reload it.
 - **Keys never leave the browser** — API keys are stored in `localStorage` and sent straight to the provider, never to a third-party server.
 - **No markup injection** — messages are rendered with `textContent`, never `innerHTML`.
+- **Image attachments** — the **+** button next to the message box attaches up to 4 pictures per message (they are shrunk to 1024 px before sending); they reach the model as images, so pick a provider/model that can see them.
 - **Installable app** — a web app manifest, icons and a service worker let Chrome install it as a standalone app; the shell is cached, so it opens even offline.
 - **Keyboard friendly** — Enter sends, Shift+Enter makes a new line.
 - **Clear errors** — HTTP status codes are translated into readable messages (rejected key, quota, retired model, outage, network block, 60 s timeout).
