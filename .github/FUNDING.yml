@@ -1,3 +1,3 @@
 # Shows the "Sponsor" (donate) button at the top of this repository.
-# GitHub accepts a "custom" funding URL, so no Sponsors account is required.
-custom: ["https://nowpayments.io/donation?api_key=5e6aa5ed-d268-408b-82e9-114e4fe9a8e9"]
+# It opens the Support section of the README, which holds the USDT (BEP20) address.
+custom: ["https://github.com/moonspiid/ai-agent-multi-model#support-this-project"]

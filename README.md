@@ -111,15 +111,22 @@ Everything else is browser APIs: `fetch`, `localStorage`, and a service worker f
 
 The app is free, has no account, no ads and no tracking, and there is no paid tier to upsell. If it saves you time, a donation pays for the hours behind it and the next features.
 
-<p>
-  <a href="https://nowpayments.io/donation?api_key=5e6aa5ed-d268-408b-82e9-114e4fe9a8e9" target="_blank" rel="noreferrer noopener">
-    <img src="https://nowpayments.io/images/embeds/donation-button-black.svg" alt="Crypto donation button by NOWPayments">
-  </a>
+**Donate in USDT (BEP20) →**
+
+<p align="center">
+  <img src="donate-usdt-qr.png" alt="QR code of the USDT BEP20 donation address" width="200">
+  <br>
+  <sub>Scan with your wallet app</sub>
 </p>
 
-Or use the text link, which works even where the image is blocked: **[♥ Donate with crypto →](https://nowpayments.io/donation?api_key=5e6aa5ed-d268-408b-82e9-114e4fe9a8e9)**. The payment page opens in a new tab and the amount is up to you.
+```
+0xA2700896E16BE762467D458F2b45260f8FAC9F3e
+```
 
-You can also support the project by starring the repository, reporting a broken provider, or sending a pull request.
+- **Network:** BEP20 — BNB Smart Chain (chain ID 56)
+- **Token:** USDT (`0x55d398326f99059fF775485246999027B3197955`)
+
+Copy the address with the button above, or scan the QR code. Send only USDT on the BEP20 network: a transfer made on another network (TRC20, ERC20, …) cannot be recovered.
 
 ## License
 
