@@ -110,7 +110,7 @@ Everything else is browser APIs: `fetch`, `localStorage`, and a service worker f
 
 [MIT](LICENSE) © 2026 moonspiid — use it, modify it, ship it.
 
-## Donat
+## Pay me a coffee
 
 <a href="https://nowpayments.io/donation?api_key=5e6aa5ed-d268-408b-82e9-114e4fe9a8e9" target="_blank" rel="noreferrer noopener">
     <img src="https://nowpayments.io/images/embeds/donation-button-black.svg" alt="Crypto donation button by NOWPayments">
