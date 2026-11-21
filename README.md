@@ -111,22 +111,30 @@ Everything else is browser APIs: `fetch`, `localStorage`, and a service worker f
 
 The app is free, has no account, no ads and no tracking, and there is no paid tier to upsell. If it saves you time, a donation pays for the hours behind it and the next features.
 
-**Donate in USDT (BEP20) →**
+**Donate in USDT →** one crypto address, no card, no account, no payment processor in between.
 
 <p align="center">
-  <img src="donate-usdt-qr.png" alt="QR code of the USDT BEP20 donation address" width="200">
+  <img src="donate-usdt-qr.png" alt="QR code of the EVM donation address" width="200">
   <br>
-  <sub>Scan with your wallet app</sub>
+  <sub>Scan with any wallet app</sub>
 </p>
 
 ```
 0xA2700896E16BE762467D458F2b45260f8FAC9F3e
 ```
 
-- **Network:** BEP20 — BNB Smart Chain (chain ID 56)
-- **Token:** USDT (`0x55d398326f99059fF775485246999027B3197955`)
+This is a plain EVM address, so **the same address works on every EVM network**. Send USDT on whichever one suits you:
 
-Copy the address with the button above, or scan the QR code. Send only USDT on the BEP20 network: a transfer made on another network (TRC20, ERC20, …) cannot be recovered.
+| Network | Token |
+| --- | --- |
+| BNB Smart Chain (BEP20) | USDT |
+| Ethereum (ERC20) | USDT |
+| Polygon | USDT |
+| Arbitrum One | USDT |
+| Base | USDT |
+| Optimism | USDT |
+
+Two rules: send **USDT only** (another token sent to this address cannot be recovered), and keep a little of the network's own coin (BNB, ETH, POL) in your wallet to pay the transfer fee. A non-EVM network such as Tron (TRC20) uses a different address format, so nothing sent there reaches this one.
 
 ## License
 
