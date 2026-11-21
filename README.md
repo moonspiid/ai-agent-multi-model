@@ -33,6 +33,7 @@
 - [Providers](#providers)
 - [How it works](#how-it-works)
 - [Good to know](#good-to-know)
+- [Support this project](#support-this-project)
 - [License](#license)
 
 ## Why
@@ -106,12 +107,20 @@ Everything else is browser APIs: `fetch`, `localStorage`, and a service worker f
 - What you get for free: OpenRouter's free models, the Gemini API free tier, Groq's free plan, Cohere trial keys (1,000 calls a month, 20 requests a minute, renewed monthly) and UnoRouter's `:free` models (no card, roughly one request per minute per model). None needs a prepaid balance that can be exhausted for good.
 - Every provider above was checked to allow browser requests with the headers the app sends. Some otherwise free providers (Z.ai, Cloudflare Workers AI, NVIDIA NIM, Vercel AI Gateway) block browser calls, so they are deliberately not in the list. AIHubMix passes CORS but caps accounts that never recharged at 10 free requests in total, so it was dropped too.
 
+## Support this project
+
+The app is free, has no account, no ads and no tracking, and there is no paid tier to upsell. If it saves you time, a donation pays for the hours behind it and the next features.
+
+<p>
+  <a href="https://nowpayments.io/donation?api_key=5e6aa5ed-d268-408b-82e9-114e4fe9a8e9" target="_blank" rel="noreferrer noopener">
+    <img src="https://nowpayments.io/images/embeds/donation-button-black.svg" alt="Crypto donation button by NOWPayments">
+  </a>
+</p>
+
+Or use the text link, which works even where the image is blocked: **[♥ Donate with crypto →](https://nowpayments.io/donation?api_key=5e6aa5ed-d268-408b-82e9-114e4fe9a8e9)**. The payment page opens in a new tab and the amount is up to you.
+
+You can also support the project by starring the repository, reporting a broken provider, or sending a pull request.
+
 ## License
 
 [MIT](LICENSE) © 2026 moonspiid — use it, modify it, ship it.
-
-## Pay me a coffee
-
-<a href="https://nowpayments.io/donation?api_key=5e6aa5ed-d268-408b-82e9-114e4fe9a8e9" target="_blank" rel="noreferrer noopener">
-    <img src="https://nowpayments.io/images/embeds/donation-button-black.svg" alt="Crypto donation button by NOWPayments">
-</a>
