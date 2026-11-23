@@ -1,0 +1,24 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Convert PWA to APK
+        uses: spierce3/pwa2apk@v1
+        with:
+          webapp_url: 'https://moonspiid.github.io/ai-agent-multi-model/'
+          app_name: 'AI Agent'
+          icon_path: 'icon-512.png'
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release
+          path: app-release.apk
