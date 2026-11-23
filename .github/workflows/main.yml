@@ -1,0 +1,63 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Show toolchain
+        run: |
+          node --version
+          java -version
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "${ANDROID_HOME:-/usr/local/lib/android/sdk}"/platforms || true
+          ls "${ANDROID_HOME:-/usr/local/lib/android/sdk}"/build-tools || true
+
+      # pwa2apk is not published on npm, so it is installed from source.
+      # Pinned to a commit so a force-push upstream cannot change what runs here.
+      - name: Install pwa2apk
+        run: |
+          git clone https://github.com/Tonihj77-T/pwa2apk.git "$RUNNER_TEMP/pwa2apk"
+          git -C "$RUNNER_TEMP/pwa2apk" checkout b6ac9169318376413f163f6e6bb8e26f33042be6
+          npm install --prefix "$RUNNER_TEMP/pwa2apk" --no-audit --no-fund
+          npm install -g "$RUNNER_TEMP/pwa2apk"
+          pwa2apk --version
+
+      # icon-512.png is committed at the repository root.
+      - name: Build APK
+        run: |
+          pwa2apk \
+            --url https://moonspiid.github.io/ai-agent-multi-model/ \
+            --name "AI Agent" \
+            --package com.moonspiid.aiagent \
+            --icon icon-512.png \
+            --output output
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-agent-apk
+          path: output/*.apk
+          if-no-files-found: error
+          retention-days: 30
